@@ -2,11 +2,21 @@
 const FS = require ('fs');
 const HTTP = require ('http');
 const PATH = require ('path');
-
 const PROCESS = require ('process');
 
-const PORT = 8000;
-const BEYOND_PRT = 9009;
+
+let PORT = 8000;
+//const BEYOND_PRT = 9009;
+let reaching_beyond = false;
+let BEYOND_URLBASE = undefined;
+
+if (process.argv.length > 2)
+  PORT = parseInt (process.argv[2]);
+
+if (process.argv.length > 3)
+  { reaching_beyond = true;
+    BEYOND_URLBASE = process.argv[3];
+  }
 
 
 const MIME_TYPES = {
@@ -91,9 +101,9 @@ async function RetrieveFromBeyond (url_frag)
     path_chunks . push ('index.html');
   const file_path = PATH.join (...path_chunks);
 
-  const beyond_url = 'http://localhost:9009' + url_frag;
+  const byon_url = BEYOND_URLBASE + url_frag;
   const prom_hand = HamHandleMaker (file_path);
-  HTTP.get (beyond_url, prom_hand[1])
+  HTTP.get (byon_url, prom_hand[1])
   . on ('error',
         (e) => { console.error (`Horrible, horrible error: ${e.message}`); }
        );
@@ -109,7 +119,7 @@ console.log (`yeah, well, urly thus: ${url}`);
   const file_path = PATH.join (...path_chunks);
   const path_transgression = ! file_path . startsWith (STATIC_PATH);
   let exists = await FS.promises . access (file_path) . then (...toBool);
-  if (! exists)
+  if (! exists  &&  reaching_beyond)
     { await RetrieveFromBeyond (url);
       exists = await FS.promises . access (file_path) . then (...toBool);
     }
